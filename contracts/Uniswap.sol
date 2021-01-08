@@ -66,7 +66,9 @@ contract Uniswap {
     ) external {
         address token = DAI_ADDRESS;
         uint deadline = block.timestamp + 15; // using 'now' for convenience, but should be sent from frontend!
-        // move 'amountIn' tokens from msg.sender to this contract (needs approval before calling swapTokensForEth())
+        // needs approval before calling swapTokensForEth())
+        //require(IERC20(token).approve(address(uniswap), (amountIn + 10000)), 'Uniswap approval failed');
+        // move 'amountIn' tokens from msg.sender to this contract 
         IERC20(token).transferFrom(msg.sender, address(this), amountIn);
         // An array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
         address[] memory path = new address[](2);
@@ -103,6 +105,9 @@ contract Uniswap {
             deadline // Unix timestamp after which the transaction will revert
         );
     }
+
+    // important to receive ETH
+    receive() payable external {}
 }
 
 /* Sample input for swapExactTokensForETH:
