@@ -1,7 +1,6 @@
 {
   "name": "uniswap",
   "version": "1.0.0",
-  "description": "",
   "main": "truffle-config.js",
   "directories": {
     "test": "test"
@@ -11,5 +10,14 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sjuanati/uniswap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sjuanati/uniswap/issues"
+  },
+  "homepage": "https://github.com/sjuanati/uniswap#readme",
+  "description": ""
 }
