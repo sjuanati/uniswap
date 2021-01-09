@@ -22,16 +22,13 @@ contract Uniswap {
         uniswap = IUniswap(UNISWAP_ROUTER_ADDRESS);
     }
 
+    // Swaps an exact amount of input tokens for as many output tokens as possible, along the route determined by the path
     function swapExactTokensForTokens(uint256 amountIn) external {
         address tokenIn = DAI_ADDRESS;
         address tokenOut = UNI_ADDRESS;
 
         // move 'amountIn' tokens from User to this Contract (User's approval is required before the transfer)
-        require(
-            IERC20(tokenIn).allowance(msg.sender, address(this)) >= amountIn,
-            "Uniswap approval is missing"
-        );
-        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        _transferToken(tokenIn, msg.sender, address(this), amountIn);
 
         // an array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
         address[] memory path = new address[](2);
@@ -56,6 +53,37 @@ contract Uniswap {
         );
     }
 
+    // Receive an exact amount of output tokens for as few input tokens as possible, along the route determined by the path.
+    function swapTokensForExactTokens(uint256 amountOut) external {
+        address tokenIn = DAI_ADDRESS;
+        address tokenOut = UNI_ADDRESS;
+
+        // an array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
+        address[] memory path = new address[](2);
+        path[0] = tokenIn;
+        path[1] = tokenOut;
+
+        // Calculates the minimum amount in
+        uint256[] memory amountInMin = uniswap.getAmountsIn(amountOut, path);
+
+        // move 'amountIn' tokens from User to this Contract (User's approval is required before the transfer)
+        _transferToken(tokenIn, msg.sender, address(this), amountInMin[0]);
+
+        // approve to the Router to withdraw this 'amountIn' tokens
+        IERC20(tokenIn).approve(address(uniswap), amountInMin[0]);
+
+        // using 'now' for convenience, but should be sent from frontend!
+        uint256 deadline = block.timestamp + 15;
+
+        uniswap.swapTokensForExactTokens(
+            amountOut,
+            amountInMin[0],
+            path,
+            msg.sender,
+            deadline
+        );
+    }
+
     // Swaps an exact amount of tokens for as much ETH as possible, along the route determined by the path
     function swapExactTokensForETH(
         //address token,
@@ -65,11 +93,7 @@ contract Uniswap {
         address token = DAI_ADDRESS;
 
         // move 'amountIn' tokens from User to this Contract (User's approval is required before the transfer)
-        require(
-            IERC20(token).allowance(msg.sender, address(this)) >= amountIn,
-            "Uniswap approval is missing"
-        );
-        IERC20(token).transferFrom(msg.sender, address(this), amountIn);
+        _transferToken(token, msg.sender, address(this), amountIn);
 
         // an array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
         address[] memory path = new address[](2);
@@ -112,6 +136,19 @@ contract Uniswap {
             msg.sender, // Recipient of the output tokens
             deadline // Unix timestamp after which the transaction will revert
         );
+    }
+
+    function _transferToken(
+        address token,
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
+        require(
+            IERC20(token).allowance(from, to) >= amount,
+            "Uniswap approval is missing"
+        );
+        IERC20(token).transferFrom(from, to, amount);
     }
 
     // important to receive ETH

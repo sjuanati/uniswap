@@ -5,12 +5,20 @@ interface IUniswap {
     // From uniswap-v2-periphery/contracts/UniswapV2Router02.sol
 
     function swapExactTokensForTokens(
-        uint amountIn,
-        uint amountOutMin,
+        uint256 amountIn,
+        uint256 amountOutMin,
         address[] calldata path,
         address to,
-        uint deadline
-    ) external returns (uint[] memory amounts);
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
+    function swapTokensForExactTokens(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
 
     function swapExactTokensForETH(
         uint256 amountIn,
@@ -28,6 +36,11 @@ interface IUniswap {
     ) external payable returns (uint256[] memory amounts);
 
     function getAmountsOut(uint256 amountIn, address[] memory path)
+        external
+        view
+        returns (uint256[] memory amounts);
+
+    function getAmountsIn(uint256 amountOut, address[] memory path)
         external
         view
         returns (uint256[] memory amounts);
