@@ -84,6 +84,26 @@ contract Uniswap {
         );
     }
 
+    // Swaps an exact amount of ETH for as many output tokens as possible, along the route determined by the path
+    function swapExactETHforTokens() external payable {
+        address token = DAI_ADDRESS;
+
+        address[] memory path = new address[](2);
+        path[0] = uniswap.WETH();
+        path[1] = token;
+
+        uint256 deadline = block.timestamp + 15;
+
+        uint256[] memory amountOut = uniswap.getAmountsOut(msg.value, path);
+
+        uniswap.swapExactETHForTokens{value: msg.value}(
+            amountOut[1],
+            path,
+            msg.sender,
+            deadline
+        );
+    }
+
     // Swaps an exact amount of tokens for as much ETH as possible, along the route determined by the path
     function swapExactTokensForETH(
         //address token,
