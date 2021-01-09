@@ -104,6 +104,33 @@ contract Uniswap {
         );
     }
 
+    // Receive an exact amount of ETH for as few input tokens as possible, along the route determined by the path.
+    function swapTokensForExactETH(uint256 amountOut) external {
+        address token = DAI_ADDRESS;
+
+        address[] memory path = new address[](2);
+        path[0] = token;
+        path[1] = uniswap.WETH();
+
+        uint256 deadline = block.timestamp + 15;
+
+        uint256[] memory amountInMax = uniswap.getAmountsIn(amountOut, path);
+
+        // move 'amountInMin' tokens from User to this Contract (User's approval is required before the transfer)
+        _transferToken(token, msg.sender, address(this), amountInMax[0]);
+
+        // approve to the Router to withdraw this 'amountIn' tokens
+        IERC20(token).approve(address(uniswap), amountInMax[0]);
+
+        uniswap.swapTokensForExactETH(
+            amountOut,
+            amountInMax[0],
+            path,
+            msg.sender,
+            deadline
+        );
+    }
+
     // Swaps an exact amount of tokens for as much ETH as possible, along the route determined by the path
     function swapExactTokensForETH(
         //address token,

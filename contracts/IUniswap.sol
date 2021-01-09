@@ -20,6 +20,14 @@ interface IUniswap {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 
+    function swapTokensForExactETH(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
     function swapExactETHForTokens(
         uint256 amountOutMin,
         address[] calldata path,
