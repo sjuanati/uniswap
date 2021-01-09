@@ -3,6 +3,15 @@ pragma solidity ^0.7.3;
 
 interface IUniswap {
     // From uniswap-v2-periphery/contracts/UniswapV2Router02.sol
+
+    function swapExactTokensForTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external returns (uint[] memory amounts);
+
     function swapExactTokensForETH(
         uint256 amountIn,
         uint256 amountOutMin,

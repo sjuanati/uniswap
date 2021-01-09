@@ -22,12 +22,45 @@ contract Uniswap {
         uniswap = IUniswap(UNISWAP_ROUTER_ADDRESS);
     }
 
+    function swapExactTokensForTokens(uint256 amountIn) external {
+        address tokenIn = DAI_ADDRESS;
+        address tokenOut = UNI_ADDRESS;
+
+        // move 'amountIn' tokens from User to this Contract (User's approval is required before the transfer)
+        require(
+            IERC20(tokenIn).allowance(msg.sender, address(this)) >= amountIn,
+            "Uniswap approval is missing"
+        );
+        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+
+        // an array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
+        address[] memory path = new address[](2);
+        path[0] = tokenIn;
+        path[1] = tokenOut;
+
+        // approve to the Router to withdraw this 'amountIn' tokens
+        IERC20(tokenIn).approve(address(uniswap), amountIn);
+
+        // using 'now' for convenience, but should be sent from frontend!
+        uint256 deadline = block.timestamp + 15;
+
+        // Calculates the amount out
+        uint256[] memory amountOutMin = uniswap.getAmountsOut(amountIn, path);
+
+        uniswap.swapExactTokensForTokens(
+            amountIn,
+            amountOutMin[1],
+            path,
+            msg.sender,
+            deadline
+        );
+    }
+
     // Swaps an exact amount of tokens for as much ETH as possible, along the route determined by the path
-    function swapTokensForETH(
+    function swapExactTokensForETH(
         //address token,
-        uint256 amountIn //uint256 deadline
-    ) external // uint256 amountOutMin
-    {
+        uint256 amountIn //uint256 deadline // uint256 amountOutMin
+    ) external {
         // for testing, DAI only
         address token = DAI_ADDRESS;
 
@@ -63,7 +96,7 @@ contract Uniswap {
     }
 
     // Receive an exact amount of tokens for as little ETH as possible, along the route determined by the path. Leftover ETH, if any, is returned to msg.sender
-    function swapETHForTokens(
+    function swapETHForExactTokens(
         //address token,
         uint256 amountOut //uint256 deadline
     ) external payable {
