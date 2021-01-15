@@ -4,7 +4,6 @@ pragma solidity ^0.7.3;
 import "./IUniswap.sol";
 import "./IERC20.sol";
 
-// @Dev: Market price should be calculated off-chain with Uniswap sdk
 contract Uniswap {
     // Smart contract addresses at Ropsten
     address internal constant UNISWAP_ROUTER_ADDRESS =
@@ -23,12 +22,17 @@ contract Uniswap {
     }
 
     // Swaps an exact amount of input tokens for as many output tokens as possible, along the route determined by the path
-    function swapExactTokensForTokens(uint256 amountIn) external {
-        address tokenIn = DAI_ADDRESS;
-        address tokenOut = UNI_ADDRESS;
-
+    function swapExactTokensForTokens(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 amountOutMin
+    ) external {
         // move 'amountIn' tokens from User to this Contract (User's approval is required before the transfer)
         _transferToken(tokenIn, msg.sender, address(this), amountIn);
+
+        // Calculates the amount out
+        // uint256[] memory amountOutMin = uniswap.getAmountsOut(amountIn, path);
 
         // an array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
         address[] memory path = new address[](2);
@@ -41,12 +45,9 @@ contract Uniswap {
         // using 'now' for convenience, but should be sent from frontend!
         uint256 deadline = block.timestamp + 15;
 
-        // Calculates the amount out
-        uint256[] memory amountOutMin = uniswap.getAmountsOut(amountIn, path);
-
         uniswap.swapExactTokensForTokens(
             amountIn,
-            amountOutMin[1],
+            amountOutMin,
             path,
             msg.sender,
             deadline
@@ -54,30 +55,32 @@ contract Uniswap {
     }
 
     // Receive an exact amount of output tokens for as few input tokens as possible, along the route determined by the path.
-    function swapTokensForExactTokens(uint256 amountOut) external {
-        address tokenIn = DAI_ADDRESS;
-        address tokenOut = UNI_ADDRESS;
-
+    function swapTokensForExactTokens(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountInMin,
+        uint256 amountOut
+    ) external {
         // an array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
         address[] memory path = new address[](2);
         path[0] = tokenIn;
         path[1] = tokenOut;
 
         // Calculates the minimum amount in
-        uint256[] memory amountInMin = uniswap.getAmountsIn(amountOut, path);
+        //uint256[] memory amountInMin = uniswap.getAmountsIn(amountOut, path);
 
         // move 'amountIn' tokens from User to this Contract (User's approval is required before the transfer)
-        _transferToken(tokenIn, msg.sender, address(this), amountInMin[0]);
+        _transferToken(tokenIn, msg.sender, address(this), amountInMin);
 
         // approve to the Router to withdraw this 'amountIn' tokens
-        IERC20(tokenIn).approve(address(uniswap), amountInMin[0]);
+        IERC20(tokenIn).approve(address(uniswap), amountInMin);
 
         // using 'now' for convenience, but should be sent from frontend!
         uint256 deadline = block.timestamp + 15;
 
         uniswap.swapTokensForExactTokens(
             amountOut,
-            amountInMin[0],
+            amountInMin,
             path,
             msg.sender,
             deadline
@@ -85,19 +88,20 @@ contract Uniswap {
     }
 
     // Swaps an exact amount of ETH for as many output tokens as possible, along the route determined by the path
-    function swapExactETHforTokens() external payable {
-        address token = DAI_ADDRESS;
-
+    function swapExactETHforTokens(address tokenOut, uint256 amountOut)
+        external
+        payable
+    {
         address[] memory path = new address[](2);
         path[0] = uniswap.WETH();
-        path[1] = token;
+        path[1] = tokenOut;
 
         uint256 deadline = block.timestamp + 15;
 
-        uint256[] memory amountOut = uniswap.getAmountsOut(msg.value, path);
+        //uint256[] memory amountOut = uniswap.getAmountsOut(msg.value, path);
 
         uniswap.swapExactETHForTokens{value: msg.value}(
-            amountOut[1],
+            amountOut,
             path,
             msg.sender,
             deadline
@@ -105,26 +109,28 @@ contract Uniswap {
     }
 
     // Receive an exact amount of ETH for as few input tokens as possible, along the route determined by the path.
-    function swapTokensForExactETH(uint256 amountOut) external {
-        address token = DAI_ADDRESS;
-
+    function swapTokensForExactETH(
+        address tokenIn,
+        uint256 amountInMax,
+        uint256 amountOut
+    ) external {
         address[] memory path = new address[](2);
-        path[0] = token;
+        path[0] = tokenIn;
         path[1] = uniswap.WETH();
 
         uint256 deadline = block.timestamp + 15;
 
-        uint256[] memory amountInMax = uniswap.getAmountsIn(amountOut, path);
+        //uint256[] memory amountInMax = uniswap.getAmountsIn(amountOut, path);
 
         // move 'amountInMin' tokens from User to this Contract (User's approval is required before the transfer)
-        _transferToken(token, msg.sender, address(this), amountInMax[0]);
+        _transferToken(tokenIn, msg.sender, address(this), amountInMax);
 
         // approve to the Router to withdraw this 'amountIn' tokens
-        IERC20(token).approve(address(uniswap), amountInMax[0]);
+        IERC20(tokenIn).approve(address(uniswap), amountInMax);
 
         uniswap.swapTokensForExactETH(
             amountOut,
-            amountInMax[0],
+            amountInMax,
             path,
             msg.sender,
             deadline
@@ -133,33 +139,31 @@ contract Uniswap {
 
     // Swaps an exact amount of tokens for as much ETH as possible, along the route determined by the path
     function swapExactTokensForETH(
-        //address token,
-        uint256 amountIn //uint256 deadline // uint256 amountOutMin
+        address tokenIn,
+        uint256 amountIn,
+        uint256 amountOutMin
     ) external {
-        // for testing, DAI only
-        address token = DAI_ADDRESS;
-
         // move 'amountIn' tokens from User to this Contract (User's approval is required before the transfer)
-        _transferToken(token, msg.sender, address(this), amountIn);
+        _transferToken(tokenIn, msg.sender, address(this), amountIn);
 
         // an array of token addresses (tokens we want to trade). path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
         address[] memory path = new address[](2);
-        path[0] = token;
+        path[0] = tokenIn;
         path[1] = uniswap.WETH();
 
         // approve to the Router to withdraw this 'amountIn' tokens
-        IERC20(token).approve(address(uniswap), amountIn);
+        IERC20(tokenIn).approve(address(uniswap), amountIn);
 
         // using 'now' for convenience, but should be sent from frontend!
         uint256 deadline = block.timestamp + 15;
 
         // Calculates the amount out
-        uint256[] memory amountOutMin = uniswap.getAmountsOut(amountIn, path);
+        //uint256[] memory amountOutMin = uniswap.getAmountsOut(amountIn, path);
 
         // Swap Tokens for ETH
         uniswap.swapExactTokensForETH(
             amountIn, // The amount of input tokens to send
-            amountOutMin[1], // The minimum amount of output tokens that must be received for the transaction not to revert (amountOutMin must be retrieved from an oracle of some kind)
+            amountOutMin, // The minimum amount of output tokens that must be received for the transaction not to revert (amountOutMin must be retrieved from an oracle of some kind)
             path, // An array of token addresses. path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity
             msg.sender, // Recipient: Ether to be sent directly to the sender. If smart contract, it must be able to receive ETH!
             deadline // Unix timestamp after which the transaction will revert
@@ -168,14 +172,13 @@ contract Uniswap {
 
     // Receive an exact amount of tokens for as little ETH as possible, along the route determined by the path. Leftover ETH, if any, is returned to msg.sender
     function swapETHForExactTokens(
-        //address token,
+        address tokenOut,
         uint256 amountOut //uint256 deadline
     ) external payable {
-        address token = DAI_ADDRESS;
         uint256 deadline = block.timestamp + 15; // using 'now' for convenience, but should be sent from frontend!
         address[] memory path = new address[](2);
         path[0] = uniswap.WETH();
-        path[1] = token;
+        path[1] = tokenOut;
         // Swap ETH for Tokens
         uniswap.swapETHForExactTokens{value: msg.value}(
             amountOut, // The amount of tokens to receive
@@ -201,17 +204,3 @@ contract Uniswap {
     // important to receive ETH
     receive() external payable {}
 }
-
-/* Sample input for swapExactTokensForETH:
-token:		    0xad6d458402f60fd3bd25163575031acdce07538d
-amountIn: 		2807740571120975129
-amountOutMin:	2807740571120975
-deadline:		1610214892
-*/
-
-/* Sample input for swapETHForExactTokens:
-token:		    0xad6d458402f60fd3bd25163575031acdce07538d
-amountOut: 		1000000000000000000
-deadline:		1610214892
-msg.value       
-*/
