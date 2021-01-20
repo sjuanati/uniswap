@@ -56,7 +56,16 @@ contract Uniswap {
         uint256 amountETHMin,
         uint256 deadline
     ) external payable {
-        uniswap.addLiquidityETH(
+
+        // move desired amounts for tokens A from User to this Contract 
+        // (User's approval is required before the transfer)
+        _transferToken(token, msg.sender, address(this), amountTokenDesired);
+
+        // approve to the Router to withdraw the desired amounts of A & B tokens
+        IERC20(token).approve(address(uniswap), amountTokenDesired);
+
+        // ATENCIÓ, NO LI ESTIC PASSANT EL MSG.VALUE a la FUNCIÓ de UNISWAP!!!!
+        uniswap.addLiquidityETH{ value: msg.value }(
             token,
             amountTokenDesired,
             amountTokenMin,
