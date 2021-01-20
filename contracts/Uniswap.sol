@@ -1,18 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.3;
 
-import "./IUniswap.sol";
+// import "./IUniswap.sol";
+import "./interfaces/IUniswapV2Router02.sol";
+import "./interfaces/IUniswapV2Pair.sol";
+import "./interfaces/IUniswapV2Factory.sol";
 import "./IERC20.sol";
 
 contract Uniswap {
     // Smart contract addresses at Ropsten
     address internal constant UNISWAP_ROUTER_ADDRESS =
         0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address internal constant UNISWAP_FACTORY_ADDRESS =
+        0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
-    IUniswap uniswap;
+    IUniswapV2Router02 uniswap;
+    IUniswapV2Pair pair;
+    IUniswapV2Factory factory;
+
+    address public factoryAddress;
+    uint public totalBalance;
+
+    //testing
+    address public tk0;
+    address public tk1;
 
     constructor() {
-        uniswap = IUniswap(UNISWAP_ROUTER_ADDRESS);
+        uniswap = IUniswapV2Router02(UNISWAP_ROUTER_ADDRESS);
+        //pair = IUniswapV2Pair(msg.sender); // every user will be the owner of different pairs.
+        factory = IUniswapV2Factory(UNISWAP_FACTORY_ADDRESS);
     }
 
     // Adds liquidity to an ERC-20⇄ERC-20 pool
@@ -25,8 +41,7 @@ contract Uniswap {
         uint256 amountBMin,
         uint256 deadline
     ) external {
-
-        // move desired amounts for tokens A & B from User to this Contract 
+        // move desired amounts for tokens A & B from User to this Contract
         // (User's approval is required before the transfer)
         _transferToken(tokenA, msg.sender, address(this), amountADesired);
         _transferToken(tokenB, msg.sender, address(this), amountBDesired);
@@ -35,7 +50,7 @@ contract Uniswap {
         IERC20(tokenA).approve(address(uniswap), amountADesired);
         IERC20(tokenB).approve(address(uniswap), amountBDesired);
 
-        // add liquidity
+        // add liquidity with tokens A & B
         uniswap.addLiquidity(
             tokenA,
             tokenB,
@@ -56,16 +71,15 @@ contract Uniswap {
         uint256 amountETHMin,
         uint256 deadline
     ) external payable {
-
-        // move desired amounts for tokens A from User to this Contract 
+        // move desired amounts for tokens A from User to this Contract
         // (User's approval is required before the transfer)
         _transferToken(token, msg.sender, address(this), amountTokenDesired);
 
         // approve to the Router to withdraw the desired amounts of A & B tokens
         IERC20(token).approve(address(uniswap), amountTokenDesired);
 
-        // ATENCIÓ, NO LI ESTIC PASSANT EL MSG.VALUE a la FUNCIÓ de UNISWAP!!!!
-        uniswap.addLiquidityETH{ value: msg.value }(
+        // add liquidity with ETH and token
+        uniswap.addLiquidityETH{value: msg.value}(
             token,
             amountTokenDesired,
             amountTokenMin,
@@ -111,6 +125,13 @@ contract Uniswap {
             msg.sender,
             deadline
         );
+    }
+
+    function showLiquidity(address tokenA, address tokenB) external {
+        // get the address of a pair
+        factoryAddress = factory.getPair(tokenA, tokenB);
+        pair = IUniswapV2Pair(factoryAddress);
+        totalBalance = pair.balanceOf(msg.sender);
     }
 
     // Swaps an exact amount of input tokens for as many output tokens as possible, along the route determined by the path
