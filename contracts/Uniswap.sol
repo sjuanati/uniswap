@@ -15,7 +15,7 @@ contract Uniswap {
         0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
     IUniswapV2Router02 uniswap;
-    IUniswapV2Pair pair;
+    //IUniswapV2Pair pair;
     IUniswapV2Factory factory;
 
     address public factoryAddress;
@@ -27,7 +27,6 @@ contract Uniswap {
 
     constructor() {
         uniswap = IUniswapV2Router02(UNISWAP_ROUTER_ADDRESS);
-        //pair = IUniswapV2Pair(msg.sender); // every user will be the owner of different pairs.
         factory = IUniswapV2Factory(UNISWAP_FACTORY_ADDRESS);
     }
 
@@ -127,11 +126,17 @@ contract Uniswap {
         );
     }
 
-    function showLiquidity(address tokenA, address tokenB) external {
-        // get the address of a pair
-        factoryAddress = factory.getPair(tokenA, tokenB);
-        pair = IUniswapV2Pair(factoryAddress);
-        totalBalance = pair.balanceOf(msg.sender);
+    // function showLiquidity2(address tokenA, address tokenB) external {
+    //     // get the address of a pair
+    //     factoryAddress = factory.getPair(tokenA, tokenB);
+    //     pair = IUniswapV2Pair(factoryAddress);
+    //     totalBalance = pair.balanceOf(msg.sender);
+    // }
+
+    function getLiquidity(address tokenA, address tokenB) view external returns (uint256) {
+        IUniswapV2Pair pair;
+        pair = IUniswapV2Pair(factory.getPair(tokenA, tokenB));
+        return pair.balanceOf(msg.sender);
     }
 
     // Swaps an exact amount of input tokens for as many output tokens as possible, along the route determined by the path
