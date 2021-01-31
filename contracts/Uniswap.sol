@@ -118,6 +118,11 @@ contract Uniswap {
         uint256 amountETHMin,
         uint256 deadline
     ) external {
+
+        // Approve token
+        IERC20(token).approve(address(uniswap), liquidity);
+
+        // Remove liquidity
         uniswap.removeLiquidityETH(
             token,
             liquidity,
