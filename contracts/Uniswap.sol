@@ -46,8 +46,9 @@ contract Uniswap {
         _transferToken(tokenB, msg.sender, address(this), amountBDesired);
 
         // approve to the Router to withdraw the desired amounts of A & B tokens
-        IERC20(tokenA).approve(address(uniswap), amountADesired);
-        IERC20(tokenB).approve(address(uniswap), amountBDesired);
+        // This is done through web3js before calling this function.
+        //IERC20(tokenA).approve(address(uniswap), amountADesired);
+        //IERC20(tokenB).approve(address(uniswap), amountBDesired);
 
         // add liquidity with tokens A & B
         uniswap.addLiquidity(
@@ -75,7 +76,8 @@ contract Uniswap {
         _transferToken(token, msg.sender, address(this), amountTokenDesired);
 
         // approve to the Router to withdraw the desired amounts of A & B tokens
-        IERC20(token).approve(address(uniswap), amountTokenDesired);
+        // This is done through web3js before calling this function.
+        //IERC20(token).approve(address(uniswap), amountTokenDesired);
 
         // add liquidity with ETH and token
         uniswap.addLiquidityETH{value: msg.value}(
